@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2003-2015, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.md or http://ckeditor.com/license
+-->
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>API Usage &mdash; CKEditor Sample</title>
+	<script src="../ckeditor.js"></script>
+    <script src="assets/uilanguages/languages.js"></script>
+	<link href="sample.css" rel="stylesheet">
+	<script>
+var editor;
+//var languageCode='fa';
+				function createEditor( languageCode ) {
+					alert(languageCode);
+					if ( editor )
+						editor.destroy();
+
+					// Replace the <textarea id="editor"> with an CKEditor
+					// instance, using default configurations.
+					editor = CKEDITOR.replace( 'editor1', {
+						language: languageCode,
+						height: 200,
+        				width: 800,
+						on: {
+							instanceReady: function() {
+								// Wait for the editor to be ready to set
+								// the language combo.
+								var languages = document.getElementById( 'languages' );
+								languages.value = this.langCode;
+								languages.disabled = false;
+							}
+						}
+					});
+				}
+
+
+
+
+
+	</script>
+
+</head>
+<body onLoad="createEditor('fa');">
+	
+	
+
+	<!-- This <div> holds alert messages to be display in the sample page. -->
+	
+	<form action="../../../samples/sample_posteddata.php" method="post">
+    <div style="width:200px;"></div>
+		<textarea cols="50" id="editor1" name="editor1" rows="10"></textarea>
+
+		
+
+		
+
+		
+	</form>
+	
+</body>
+</html>
