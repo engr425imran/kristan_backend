@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Mail\TestEmail;
 use App\User;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -17,7 +18,9 @@ use App\User;
 */
 
 Route::get('/', function () {
-    $user = User::find(1)->toArray();
+    // $user = User::find(1)->toArray();
+    // $pas = Hash::make('password');
+    // return $pas;
     // print_r($user['email']);die;
     // Mail::send('emails.test', $user, function ($message) use ($user) {
     // $message->to('zubairbasharat14@gmail.com');

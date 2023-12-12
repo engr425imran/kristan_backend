@@ -31,6 +31,8 @@ class AuthController extends Controller
             'profile' => 'required'
         ]);
 
+
+
         if ($validator->fails()) {
             $error = $validator->errors()->first();
             return response()->json(['status' => 202, 'message' => $error]);
@@ -49,7 +51,6 @@ class AuthController extends Controller
         }
 
 
-
         $check_email = User::where(['email' => $request->email])->first();
 
         if (!empty($check_email)) {
@@ -65,6 +66,7 @@ class AuthController extends Controller
             'company' => (isset($request->company)) ? $request->company : '',
             'location' => (isset($request->location)) ? $request->location : '',
         ];
+
         $imageName = "";
         if ($request->hasFile('profile')) {
             $imageName = time() . '.' . $request->profile->extension();
@@ -72,7 +74,6 @@ class AuthController extends Controller
             $request->profile->move(public_path('profiles'), $imageName);
             $create_user['profile'] = 'profiles/' . $imageName;
         }
-
         $user = User::create($create_user);
         $user =  Auth::loginUsingId($user->id);
 

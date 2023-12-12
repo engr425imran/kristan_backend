@@ -13,7 +13,7 @@ use App\Feedback;
 
 class CustomerController extends Controller
 {
-    public function vehicle_request(Request $request)
+    public function vehicleRequest(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'ticket_number' => 'required',
@@ -21,22 +21,25 @@ class CustomerController extends Controller
             'duration' => 'required',
         ]);
 
+
         if ($validator->fails()) {
             $error = $validator->errors()->first();
             return response()->json(['status' => 202, 'message'=> $error]);
         }
 
-        $valet_manger = User::where(['location'=> $request->location, 'user_type'=> 1])->first();
+        // $valet_manger = User::where(['location'=> $request->location, 'user_type'=> 1])->first();
+        // if(empty($valet_manger))
+        // return response()->json(['status'=> 203, 'message'=> 'invalid location']);
 
-        if(empty($valet_manger))
-        return response()->json(['status'=> 203, 'message'=> 'invalid location']);
+        // return Auth;
 
         $request_data = [
             'customer_id' => Auth::user()->id,
             'ticket_number' => $request->ticket_number,
             'location' => $request->location,
             'duration'=> date("H:i:s", strtotime($request->duration)),
-            'valet_manager' => $valet_manger->id,
+            'valet_manager' =>1,
+            // 'valet_manager' => $valet_manger->id,
         ];
 
         $request_data = VehicleRequest::create($request_data);
@@ -120,7 +123,7 @@ class CustomerController extends Controller
         return response()->json(['status'=> 200, 'message'=> 'feedback submitted successfully']);
     }
     
-    public function get_requests()
+    public function getRequests()
     {
        $requests = VehicleRequest::where(['customer_id'=> Auth::user()->id, 'status'=> 1])->with('feedback')->get();
        return response()->json(['status'=> 200, 'message'=> 'All Completed Requests', 'data'=> $requests]);

@@ -62,12 +62,12 @@ Route::group(['prefix' => '/', 'middleware' => 'auth:api'], function(){
 
 
     Route::group(['prefix' => 'customer'], function(){
-        Route::POST('vehicle/request', [CustomerController::class, 'vehicle_request']);  
+        Route::POST('vehicle/request', [CustomerController::class, 'vehicleRequest']);  
         Route::GET('cancel/request/{request_id?}', [CustomerController::class, 'cancel_request']);  
         Route::GET('all/cancel/requests', [CustomerController::class, 'all_cancel_request']);  
         Route::GET('undo/request/{request_id?}', [CustomerController::class, 'undo_request']);  
         Route::POST('give/feedback', [CustomerController::class, 'feedback']);  
-        Route::GET('get/requests', [CustomerController::class, 'get_requests']);
+        Route::GET('get/requests', [CustomerController::class, 'getRequests']);
         Route::GET('get/latest/request', [CustomerController::class, 'get_latest_request']);
 
   });

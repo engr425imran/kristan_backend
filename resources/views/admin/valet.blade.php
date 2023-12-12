@@ -13,7 +13,7 @@
                         <h4 class="page-title float-left">Valet List</h4>
 
                         <ol class="breadcrumb float-right">
-                            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
                             <li class="breadcrumb-item active">Valet List</li>
                         </ol>
 

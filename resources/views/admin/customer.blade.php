@@ -12,7 +12,7 @@
                     <div class="page-title-box">
                         <h4 class="page-title float-left">Customer List</h4>
                         <ol class="breadcrumb float-right">
-                            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
                             <li class="breadcrumb-item active">Customer List</li>
                         </ol>
                         <div class="clearfix"></div>
