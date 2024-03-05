@@ -69,14 +69,23 @@ class ValetManagerController extends Controller
     {
         $manager_id = Auth::user()->id;
         $pending_requests = VehicleRequest::where(['status' => 0, 'valet' => null])->where(['valet_manager' => $manager_id])->get();
+        // $pending_requests = VehicleRequest::where(['status' => 0])->where(['valet_manager' => $manger_id])->get();
+        // $completed_requests = VehicleRequest::where(['status' => 1])->where(['valet_manager' => $manger_id])->get();
         $requests = VehicleRequest::where(['valet_manager' => Auth::user()->id])->where('status', '!=', 2)->with(['customer' => function ($query) {
             $query->where(['user_type' => 0]);
         }])->with('valetdetails')->orderBy('id', 'DESC')->get();
         $valets = User::where(['created_by' => Auth::user()->id, 'is_free' => 1, 'user_type' => 2])->get();
         $request_ids = VehicleRequest::where(['valet_manager' => $manager_id, 'status' => 1, 'payment_done_by_customer' => 1])->whereDate('updated_at', today())->pluck('id');
-        $today_pooled_tip = Feedback::whereIn('request_id', $request_ids)->where('tip_type', 0)->sum('tip');
+        // $request_ids = VehicleRequest::where(['valet_manager' => $manager_id, 'status' => 1, 'payment_done_by_customer' => 1, 'tip_type' => 0])->get();
+        // $request_ids = VehicleRequest::where(['valet_manager' => $manager_id])->where(['status' => 1, 'payment_done_by_customer' => 1, 'tip_type' => 0]);
+        // $request_ids = VehicleRequest::where(['valet_manager' => $manager_id])->where(['status' => 1, 'payment_done_by_customer' => 1, 'tip_type' => 0])->pluck('id');
 
-        return response(['pending_request' => $pending_requests, 'valets' => $valets, 'pooled_tip' => $today_pooled_tip], 200);
+        // return $request_ids;
+
+        $pooled_tip = Feedback::whereIn('request_id', $request_ids)->where('tip_type', 0)->sum('tip');
+        return $pooled_tip;
+
+        return response(['pending_request' => $pending_requests, 'valets' => $valets], 200);
         // return response(['pending_request' => $pending_requests, 'settled_requests' => $completed_requests, 'valets' => $valets], 200);
         // return response(['message' => 'All Vehicle Request', 'data' => $requests, 'pending_request' => $pending_requests, 'settled_requests' => $completed_requests], 200);
     }
@@ -170,21 +179,20 @@ class ValetManagerController extends Controller
 
 
 
-    public function updateTipType(Request $request)
+    public function tip_type(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'type' => 'required', // tip type 0: pool tip , 1: direct tip
         ]);
-
 
         if ($validator->fails()) {
             $error = $validator->errors()->first();
             return response(['message' => $error], 400);
         }
 
-        if ($request->type == 'pooled') {
+        if ($request->type == 0) {
             $validator = Validator::make($request->all(), [
-                'tip_frequency' => 'required', // duration 0: daily , 1: weekly, 2: monthly
+                'duration' => 'required', // duration 0: daily , 1: weekly, 2: monthly
             ]);
             if ($validator->fails()) {
                 $error = $validator->errors()->first();
@@ -193,19 +201,14 @@ class ValetManagerController extends Controller
         }
 
         if (Auth::user()->user_type == 1) {
-            $user = User::find(auth()->user()->id);
+            $data['tip_type'] = $request->type;
+            if ($request->type == 0)
+                $data['duration'] = $request->duration;
 
-            if ($request->type == 1) {
-                $user->tip_type = 1;
-            }
-            if ($request->type == 0) {
-                $user->tip_type = 0;
-                $user->pooled_tip_frequency = $request->tip_frequency;
-            }
-            $user->save();
-            return response(['message' => 'tip type updated successfully', 'user' => $user], 203);
+            User::Where(['id' => Auth::user()->id])->update($data);
+            return response(['message' => 'tip type updated successfully'], 203);
         } else {
-            return response(['messgae' => 'Unauthorized access...'], 403);
+            return response(['messgae' => 'Only Valet Manager Can set this'], 403);
         }
     }
 
@@ -270,7 +273,7 @@ class ValetManagerController extends Controller
         return response(['message' => 'Greetings Send successfully'], 203);
     }
 
-    public function valetRatingReport(Request $request)
+    public function feedback_reporting(Request $request)
     {
         $average_rating = 0;
         $vehicle_requests = VehicleRequest::where(['valet_manager' => Auth::user()->id])->pluck('id');
@@ -287,7 +290,7 @@ class ValetManagerController extends Controller
         return response(['message' => 'Feedbacks', 'data' => $all_feedbacks, 'avg_rating' => $average_rating, 'total_feedback' => $total_feedback], 200);
     }
 
-    public function valetTipReport(Request $request)
+    public function tip_reporting(Request $request)
     {
         $vehicle_requests = VehicleRequest::where(['valet_manager' => Auth::user()->id])->pluck('id');
         $feedback = Feedback::whereIn('request_id', $vehicle_requests)->where(['tip_type' => 0]);

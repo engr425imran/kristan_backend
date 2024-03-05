@@ -36,52 +36,72 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('forgot-password', [AuthController::class,'forgot']);
-Route::post('verify-otp', [AuthController::class,'verify_otp']);
-Route::post('update-password', [AuthController::class,'update_password']);
-Route::post('valet-create-password',[ValetController::class, 'create_password']);
+Route::post('forgot-password', [AuthController::class, 'sendforgotPasswordMail']);
+Route::post('verify-otp', [AuthController::class, 'verify_otp']);
+Route::post('update-password', [AuthController::class, 'update_password']);
+Route::post('valet-create-password', [ValetController::class, 'SignUpValet']);
 
-Route::group(['prefix' => '/', 'middleware' => 'auth:api'], function(){
-    Route::post('add_valet',[ValetManagerController::class, 'add_valet']);
-    Route::GET('all-locations',[ValetManagerController::class, 'locations']);
-    Route::GET('all_valet',[ValetManagerController::class, 'get_all_valet']);
-    Route::GET('all-vehicle-request',[ValetManagerController::class, 'all_vehicle_request']);
-    Route::post('set_tip_type', [ValetManagerController::class, 'tip_type']);
-    Route::post('assign-to-valet', [ValetManagerController::class, 'assign_to_valet']);
+Route::group(['prefix' => '/', 'middleware' => 'auth:api'], function () {
+
+    //*************************** */ valet manager *************************** //
+    Route::post('add_valet', [ValetManagerController::class, 'addNewValet']);
+    Route::GET('all-locations', [ValetManagerController::class, 'locations']);
+    Route::GET('get-all-valet', [ValetManagerController::class, 'getAllValet']);
+    Route::GET('all-vehicle-request', [ValetManagerController::class, 'getAllVehicleRequest']);
+    Route::post('set-tip-distribution-type', [ValetManagerController::class, 'updateTipType']);
+    Route::post('assign-to-valet', [ValetManagerController::class, 'assignToValet']);
     Route::post('unassign-valet', [ValetManagerController::class, 'unassign_valet']);
-    Route::POST('update-profile', [AuthController::class, 'update_profile']);
-    Route::GET('profile', [AuthController::class, 'profile']);
+    Route::POST('update-profile', [AuthController::class, 'updateProfile']);
+    Route::GET('user-profile-display', [AuthController::class, 'displayProfile']);
+    // Route::GET('profile-display-user/{profile}', [AuthController::class, 'displayProfile']);
     Route::GET('get/latest/feedback', [ValetManagerController::class, 'get_feedback']);
     Route::POST('send/greetings', [ValetManagerController::class, 'send_greetings']);
-    Route::POST('feedback/reporting',[ValetManagerController::class, 'feedback_reporting']);
-    Route::POST('tip/reporting',[ValetManagerController::class, 'tip_reporting']);
-    Route::POST('update/contribution',[ValetManagerController::class, 'update_contribution']);
-    Route::GET('distriubte',[ValetManagerController::class, 'distriubte']);
-    Route::GET('payment/request',[ValetManagerController::class, 'payment_request']);
-    Route::POST('update/payment/request',[ValetManagerController::class, 'update_payment_request']);
+    Route::POST('valet-rating-report', [ValetManagerController::class, 'valetRatingReport']);
+    Route::POST('valet-tip-report', [ValetManagerController::class, 'valetTipReport']);
+    Route::POST('update/contribution', [ValetManagerController::class, 'update_contribution']);
+    Route::GET('distriubte', [ValetManagerController::class, 'distriubte']);
+    Route::GET('payment/request', [ValetManagerController::class, 'payment_request']);
+    Route::POST('update/payment/request', [ValetManagerController::class, 'update_payment_request']);
 
 
-    Route::group(['prefix' => 'customer'], function(){
-        Route::POST('vehicle/request', [CustomerController::class, 'vehicleRequest']);  
-        Route::GET('cancel/request/{request_id?}', [CustomerController::class, 'cancel_request']);  
-        Route::GET('all/cancel/requests', [CustomerController::class, 'all_cancel_request']);  
-        Route::GET('undo/request/{request_id?}', [CustomerController::class, 'undo_request']);  
-        Route::POST('give/feedback', [CustomerController::class, 'feedback']);  
+    //*************************** */  ..... end ..... *************************** //
+
+    Route::group(['prefix' => 'customer'], function () {
+        Route::POST('vehicle/request', [CustomerController::class, 'CreateVehicleRequest']);
+        Route::post('send-tip', [PaymentController::class, 'newImple']);
+        Route::post('save-payment-details', [CustomerController::class, 'completePayment']);
+        Route::GET('cancel/request/{request_id?}', [CustomerController::class, 'cancel_request']);
+        Route::GET('all/cancel/requests', [CustomerController::class, 'all_cancel_request']);
+        Route::GET('undo/request/{request_id?}', [CustomerController::class, 'undo_request']);
+        Route::POST('give-feedback', [CustomerController::class, 'feedback']);
+        Route::POST('tip-valet', [PaymentController::class, 'paymentIntent']);
         Route::GET('get/requests', [CustomerController::class, 'getRequests']);
         Route::GET('get/latest/request', [CustomerController::class, 'get_latest_request']);
+    });
 
-  });
+    Route::group(['prefix' => 'valet'], function () {
+        Route::GET('get-vehicle-request', [ValetController::class, 'getVehiclesRequest']);
+        Route::POST('request-status', [ValetController::class, 'acceptRejectRequest']);
+        Route::POST('request-completed', [ValetController::class, 'requestCompleted']);
+        Route::GET('my-tips', [ValetController::class, 'myTips']);
+        Route::POST('feedback-customer', [ValetController::class, 'valetFeedback']);
+        Route::POST('payment-withdraw', [PaymentController::class, 'withdrawValetRequest']);
+    });
 
-  Route::group(['prefix' => 'valet'], function(){
-      Route::GET('get/vehicle/request',[ValetController::class, 'get_vehicle_request']);
-      Route::POST('accept/reject/request',[ValetController::class, 'accept_reject_request']);
-      Route::POST('request/completed',[ValetController::class, 'request_completed']);
-      Route::GET('my/tips',[ValetController::class, 'my_tips']);
-      Route::POST('payment/withdraw', [PaymentController::class, 'withdraw']);
-  });
+    Route::GET('logout', [AuthController::class, 'logout']);
+    Route::POST('payment', [PaymentController::class, 'payment']);
+});
+Route::get('test', [PaymentController::class, 'test']);
+Route::get('intent', [PaymentController::class, 'intent']);
+Route::post('charge', [PaymentController::class, 'paymentt']);
+Route::get('token', [PaymentController::class, 'token']);
 
-  Route::GET('logout', [AuthController::class, 'logout']);
-  Route::POST('payment', [PaymentController::class, 'payment']);
+Route::get('ll', function () {
+    $t = strtotime('About 15 minutes');
+    return $t;
+    $duration = date("H:i:s", strtotime('About 15 minutes'));
+    // $duration = date("H:i:s", strtotime($request->duration));
+    return $duration;
 });
 
-
+Route::post('test-send-tip', [PaymentController::class, 'newImple']);

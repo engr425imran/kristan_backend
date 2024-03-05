@@ -19,9 +19,10 @@ class CreateVehicleRequestsTable extends Migration
             $table->string('location');
             $table->string('ticket_number');
             $table->string('duration');
-            $table->integer('valet_manager');
+            $table->integer('valet_manager')->nullable();
             $table->integer('valet')->nullable();
             $table->tinyInteger('status')->default(0)->comment('0: incomplete, 1: completed, 2: delete');
+            $table->tinyInteger('request_status')->nullable();
             $table->timestamps();
         });
     }

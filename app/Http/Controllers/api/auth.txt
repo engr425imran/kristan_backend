@@ -241,18 +241,33 @@ class AuthController extends Controller
         return response()->json(['status' => 200, 'message' => 'logout successfully']);
     }
 
-    public function displayProfile()
+    public function profile()
     {
-        $user = auth()->user();
-        if (Storage::exists($user->profile)) {
-            return Storage::download($user->profile);
-        }
-        return response(["message" => 'not found'], 404);
+        $user = Auth::user();
+        return response()->json(['status' => 200, 'message' => 'Profile', 'data' => $user]);
     }
 
     public function updateProfile(Request $request)
     {
 
+        if ($request->hasFile('profile')) {
+            $image_name = time() . '.' . $request->profile->extension();
+
+            // return $image_name;
+            $path = Storage::putFileAs(
+                'avatars',
+                $request->file('profile'),
+                $image_name
+            );
+            // $path = Storage::putFile('avatars', $image_name);
+            // $path = Storage::putFile('avatars', $request->file('profile'));
+
+            return $path;
+            // $request->profile->move(public_path('profiles'), $imageName);
+            $update_user['profile'] = 'profiles/' . $image_name;
+        }
+
+        return "dd";
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
@@ -261,7 +276,7 @@ class AuthController extends Controller
             $error = $validator->errors()->first();
             return response(['message' => $error], 400);
         }
-        $user = auth()->user();
+
         $update_user = [
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -288,22 +303,6 @@ class AuthController extends Controller
             return response(['message' => 'Email Already Exist'], 409);
         }
 
-        if ($request->hasFile('profile')) {
-            if ($user->profile) {
-                if (Storage::exists($user->profile)) {
-                    Storage::delete($user->profile);
-                }
-            }
-            $image_name = time() . '.' . $request->profile->extension();
-            $path = Storage::putFileAs(
-                'profiles',
-                $request->file('profile'),
-                $image_name
-            );
-
-            $update_user['profile'] = $path;
-        }
-
 
         // if ($request->hasFile('profile')) {
         //     $imageName = time() . '.' . $request->profile->extension();
@@ -320,8 +319,8 @@ class AuthController extends Controller
 
         User::where(['id' => Auth::user()->id])->update($update_user);
         $user = User::find(Auth::user()->id);
-        // $user->token = $user->createToken('Laravel Password Grant Client')->accessToken;
+        $user->token = $user->createToken('Laravel Password Grant Client')->accessToken;
 
-        return response(['message' => 'Profile Updated Succefully', 'user' => $user], 200);
+        return response(['message' => 'Profile Updated Succefully', 'data' => $user], 200);
     }
 }

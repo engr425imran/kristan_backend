@@ -27,8 +27,8 @@ class CreateUsersTable extends Migration
             $table->string('location')->nullable();
             $table->string('otp')->nullable();
             $table->integer('created_by')->default(0)->comment('valet manager id');
-            $table->tinyInteger('is_verified')->default(0)->comment("0: not verified, 1: verified");
             $table->tinyInteger('is_free')->default(1)->comment('0: busy, 1: free');
+            $table->enum('pooled_tip_frequency', ['daily', 'weekly', 'monthly'])->default('daily');
             $table->tinyInteger('first_login')->default(1);
             $table->tinyInteger('contribution')->default(1);
             $table->integer('contribution_percentage')->default(0);

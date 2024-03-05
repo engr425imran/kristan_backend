@@ -37,7 +37,7 @@ class PaymentController extends Controller
         Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
         try {
             $intent = PaymentIntent::create([
-                'amount' => $request->amount, // Amount in cents
+                'amount' => $request->amount * 100, // Amount in cents
                 'currency' => 'usd',
                 // Add other payment intent parameters as needed
             ]);
@@ -63,6 +63,43 @@ class PaymentController extends Controller
             return response(['message' => 'Payment Failed due to:' . $e], 400);
         };
         return "done";
+    }
+    public function test()
+    {
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            Stripe\Charge::create([
+                "amount" => 200,
+                "currency" => "usd",
+                "source" => 'www',
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['status' => 202, 'message' => 'Payment Failed due to:' . $e]);
+        };
+        return "done";
+    }
+    public function paymentt(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'stripe_token' => 'required',
+            'amount' => 'required',
+        ]);
+        if ($validator->fails()) {
+            $error = $validator->errors()->first();
+            return response(['message' => $error], 400);
+        }
+
+        Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        try {
+            Stripe\Charge::create([
+                "amount" => $request->amount * 100,
+                "currency" => "usd",
+                "source" => $request->stripe_token,
+            ]);
+        } catch (Exception $e) {
+            return response(['message' => 'Payment Failed due to:' . $e], 400);
+        };
+        return response(['message' => 'Payment Successfull'], 200);
     }
     public function payment(Request $request)
     {

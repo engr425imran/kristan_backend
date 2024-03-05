@@ -6,18 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class VehicleRequest extends Model
 {
-    protected $fillable = ['customer_id', 'location', 'ticket_number', 'duration', 'valet_manager', 'valet', 'status'];
-    protected $appends = ['clientname', 'Valetname','state','Ratestatus'];
-     public function getStateAttribute()
+    protected $fillable = ['customer_id', 'location', 'ticket_number', 'duration', 'valet_manager', 'valet', 'status', 'processed'];
+    protected $appends = ['clientname', 'Valetname', 'state'];
+    // protected $appends = ['clientname', 'Valetname','state','Ratestatus'];
+    public function getStateAttribute()
     {
-        
-        if($this->status == 1){
+
+        if ($this->status == 1) {
             return "Completed";
         }
-        if($this->valet == NULL){
+        if ($this->valet == NULL) {
             return "pending";
-        }else{
-            return "InProgress";  
+        } else {
+            return "InProgress";
         }
     }
     public function customer()
@@ -28,29 +29,34 @@ class VehicleRequest extends Model
     {
         return $this->hasOne(User::class, 'id', 'valet');
     }
-    
+
     public function getClientNameAttribute()
     {
-        return User::Where(['id'=> $this->customer_id])->pluck('first_name')->first();
+        // return User::where(['id' => $this->customer_id])->pluck('first_name')->first();
+        $user =  User::Where(['id' => $this->customer_id])->first();
+        return $user->first_name . ' ' . $user->last_name;
     }
-    
+
     public function feedback()
     {
         return $this->hasOne(Feedback::class, 'request_id', 'id');
     }
-    
+
     public function getValetNameAttribute()
     {
-        return User::Where(['id'=> $this->valet])->pluck('first_name')->first();
+        $user =  User::Where(['id' => $this->valet])->first();
+        return $user->first_name . ' ' . $user->last_name;
+
+        // return User::Where(['id' => $this->valet])->pluck('first_name')->first();
     }
-    
-     public function getRateStatusAttribute()
-    {
-        $status = false;
-        $feedback = Feedback::where(['request_id'=> $this->id])->first();
-        if(!empty($feedback)){
-            $status = true;
-        }
-        return $status;
-    }
+
+    //  public function getRateStatusAttribute()
+    // {
+    //     $status = false;
+    //     $feedback = Feedback::where(['request_id'=> $this->id])->first();
+    //     if(!empty($feedback)){
+    //         $status = true;
+    //     }
+    //     return $status;
+    // }
 }
