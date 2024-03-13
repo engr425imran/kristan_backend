@@ -35,7 +35,6 @@ class AuthController extends Controller
         if ($validator->fails()) {
             $error = $validator->errors()->first();
             return response(['message' => $error], 400);
-            // return response(["message" => $error], 400);
         }
 
 
@@ -48,8 +47,6 @@ class AuthController extends Controller
 
             if ($validator->fails()) {
                 $error = $validator->errors()->first();
-                // return response()->json(['status' => 202, 'message' => $error]);
-
                 return response(["message" => $error], 400);
             }
         }
@@ -71,16 +68,17 @@ class AuthController extends Controller
             'location' => (isset($request->location)) ? $request->location : '',
         ];
 
-        $imageName = "";
         if ($request->hasFile('profile')) {
-            $imageName = time() . '.' . $request->profile->extension();
+            $image_name = time() . '.' . $request->profile->extension();
+            $path = Storage::putFileAs(
+                'profiles',
+                $request->file('profile'),
+                $image_name
+            );
 
-            $path = Storage::putFile('avatars', $request->file('avatar'));
-
-
-            $request->profile->move(public_path('profiles'), $imageName);
-            $create_user['profile'] = 'profiles/' . $imageName;
+            $create_user['profile'] = $path;
         }
+
         $user = User::create($create_user);
         $user =  Auth::loginUsingId($user->id);
 
@@ -89,7 +87,7 @@ class AuthController extends Controller
         }
         $resetPassword = false;
         $this->sendOtp($request->email, $resetPassword);
-        return response(['status' => 200, 'message' => 'otp sent'], 200);
+        return response(['message' => 'otp sent'], 200);
 
         // $user->token = $user->createToken('Laravel Password Grant Client')->accessToken;
         // return response()->json(['status' => 200, 'message' => 'Registration successful', 'data' => $user]);
@@ -99,13 +97,8 @@ class AuthController extends Controller
     {
         try {
             $code = mt_rand(1000, 9999);
-            // if ($resetPassword) {
-            // Mail::to($email)->send(new ResetPasswordCode($code));
-            // User::where(['email' => $email])->update(['otp' => Hash::make($code)]);
-            // }
             User::where(['email' => $email])->update(['otp' => Hash::make($code)]);
             SendVerificationOtp::dispatch($email, $code, $resetPassword);
-            // Mail::to($request->email)->send(new VerificationCode($code));
         } catch (\Throwable $th) {
             // throw $th;
         }
@@ -162,9 +155,9 @@ class AuthController extends Controller
             $token = $user->createToken('Laravel Password Grant Client')->accessToken;
             // $user->token = $user->createToken('Laravel Password Grant Client')->accessToken;
             User::where(['id' => $user->id])->update(['first_login' => 1]);
-            return response()->json(['status' => 200, 'message' => 'Login Successfully', 'user' => $user, 'token' => $token]);
+            return response(['message' => 'Login Successfully', 'user' => $user, 'token' => $token], 200);
         } else {
-            return response(['message' => 'either email or password is incorect ...'], 404);
+            return response(['message' => 'Either email or password is incorect ...'], 404);
         }
     }
 
@@ -195,29 +188,29 @@ class AuthController extends Controller
     public function verify_otp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'otp' => 'required',
-            'email' => 'required|email'
+            'email' => 'required|email',
+            'otp' => 'required'
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return response()->json(['status' => 400, 'message' => $error]);
+            return response(['message' => $error], 400);
         }
 
         $user = User::where(['email' => $request->email])->first();
 
         if (empty($user)) {
-            return response()->json(['status' => 400, 'message' => 'Invalid Email']);
+            return response(['message' => 'Invalid Email'], 400);
         }
 
         if (Hash::check($request->otp, $user->otp)) {
             $user = User::where(['email' => $request->email])->update(['otp' => '', 'email_verified_at' => now()]);
-            return response()->json(['status' => 200, 'message' => 'OTP Verified Successfully']);
+            return response(['message' => 'OTP Verified Successfully'], 200);
         } else {
-            return response()->json(['status' => 404, 'message' => 'Invalid OTP']);
+            return response(['message' => 'Invalid OTP Provided'], 404);
         }
     }
 
-    public function update_password(Request $request)
+    public function updatePassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -226,11 +219,11 @@ class AuthController extends Controller
         ]);
         if ($validator->fails()) {
             $error = $validator->errors()->first();
-            return response()->json(['status' => 400, 'message' => $error]);
+            return response(['message' => $error], 400);
         }
 
         User::where(['email' => $request->email])->update(['password' => Hash::make($request->new_password)]);
-        return response()->json(['status' => 200, 'message' => 'Password Updated Successfully']);
+        return response(['message' => 'Password Updated Successfully'], 200);
     }
 
     public function logout()
@@ -238,7 +231,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             Auth::user()->token()->revoke();
         }
-        return response()->json(['status' => 200, 'message' => 'logout successfully']);
+        return response(['message' => 'logout successfully'], 200);
     }
 
     public function displayProfile()

@@ -12,8 +12,10 @@ use App\VehicleRequest;
 use App\DistributedTip;
 use App\Feedback;
 use Illuminate\Http\Request;
-use Laravel\Ui\Presets\React;
+use Illuminate\Support\Facades\DB; // Importing the DB facade if you haven't already
 use App\Transaction;
+use App\DirectTip;
+
 
 class ValetController extends Controller
 {
@@ -46,8 +48,10 @@ class ValetController extends Controller
         $user_id = Auth::user()->id;
         $request = VehicleRequest::where(['valet' => $user_id, 'status' => 0])->first();
         $feedback = Feedback::where(['valet_id' => $user_id, 'read_by_valet' => 0])->with('vehicle_request')->first();
-        // $feedback = Feedback::where(['valet_id' => $user_id, 'read_by_valet' => 0])->with('vehicle_request')->first();
-        return response(['request' => $request, 'feedback' => $feedback], 200);
+        $averageRating = Feedback::where('valet_id', $user_id)->avg('rating');
+        $today_direct_tip = DirectTip::whereDate('created_at', today())->sum('amount');
+
+        return response(['request' => $request, 'feedback' => $feedback, 'rating' => round($averageRating), 'today_direct_tip' => $today_direct_tip], 200);
     }
 
     public function acceptRejectRequest(Request $request)
@@ -96,7 +100,7 @@ class ValetController extends Controller
             User::where(['id' => $vehicle_request->valet])->update(['is_free' => 1]);
         }
         $vehicle_request->status = 1;
-        $vehicle_request->processed = 1;
+        // $vehicle_request->processed = 1;
         $vehicle_request->save();
         return response(["message" => 'Request Completed', 'data' => $vehicle_request], 200);
     }

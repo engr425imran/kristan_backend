@@ -38,14 +38,14 @@ Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('forgot-password', [AuthController::class, 'sendforgotPasswordMail']);
 Route::post('verify-otp', [AuthController::class, 'verify_otp']);
-Route::post('update-password', [AuthController::class, 'update_password']);
+Route::post('update-password', [AuthController::class, 'updatePassword']);
 Route::post('valet-create-password', [ValetController::class, 'SignUpValet']);
 
 Route::group(['prefix' => '/', 'middleware' => 'auth:api'], function () {
 
     //*************************** */ valet manager *************************** //
     Route::post('add_valet', [ValetManagerController::class, 'addNewValet']);
-    Route::GET('all-locations', [ValetManagerController::class, 'locations']);
+    Route::GET('get-all-locations', [ValetManagerController::class, 'getALllocations']);
     Route::GET('get-all-valet', [ValetManagerController::class, 'getAllValet']);
     Route::GET('all-vehicle-request', [ValetManagerController::class, 'getAllVehicleRequest']);
     Route::post('set-tip-distribution-type', [ValetManagerController::class, 'updateTipType']);
@@ -70,7 +70,7 @@ Route::group(['prefix' => '/', 'middleware' => 'auth:api'], function () {
         Route::POST('vehicle/request', [CustomerController::class, 'CreateVehicleRequest']);
         Route::post('send-tip', [PaymentController::class, 'newImple']);
         Route::post('save-payment-details', [CustomerController::class, 'completePayment']);
-        Route::GET('cancel/request/{request_id?}', [CustomerController::class, 'cancel_request']);
+        Route::GET('cancel-request/{request_id?}', [CustomerController::class, 'cancelRequest']);
         Route::GET('all/cancel/requests', [CustomerController::class, 'all_cancel_request']);
         Route::GET('undo/request/{request_id?}', [CustomerController::class, 'undo_request']);
         Route::POST('give-feedback', [CustomerController::class, 'feedback']);
@@ -105,3 +105,7 @@ Route::get('ll', function () {
 });
 
 Route::post('test-send-tip', [PaymentController::class, 'newImple']);
+Route::get('dd', function () {
+    // return "Sss";
+    return App\VehicleRequest::find(18);
+});

@@ -23,17 +23,20 @@ class CustomerController extends Controller
             'duration' => 'required',
         ]);
 
-
         if ($validator->fails()) {
             $error = $validator->errors()->first();
             return response(['message' => $error], 400);
         }
 
+
         $valet_manger = User::where(['location' => $request->location, 'user_type' => 1])->first();
         if (empty($valet_manger))
             return response(['message' => 'invalid location'], 400);
-        // return Auth;
-
+        if ($request->prev_expire_ticket_id) {
+            $vehicle = VehicleRequest::find($request->prev_expire_ticket_id);
+            $vehicle->status = 2;
+            $vehicle->save();
+        }
         $request_data = [
             'customer_id' => Auth::user()->id,
             'ticket_number' => $request->ticket_number,
@@ -44,31 +47,28 @@ class CustomerController extends Controller
             'valet_manager' => $valet_manger->id,
         ];
 
-
         $request_data = VehicleRequest::create($request_data);
-
-        return response(['message' => 'Request send successfullly to valet manager', 'data' => $request_data], 201);
-        // return response()->json(['status'=> 200, 'message'=> 'Request send successfullly to valet manager', 'data'=> $request_data]);
+        return response(['message' => 'Vehicle Request Created'], 201);
     }
 
 
 
-    public function cancel_request($request_id = NULL)
+    public function cancelRequest($request_id = NULL)
     {
         if ($request_id == NULL)
-            return response()->json(['status' => 202, 'message' => 'Please send request id']);
+            return response(['message' => 'Please send request id'], 400);
 
         $request = VehicleRequest::where(['id' => $request_id, 'customer_id' => Auth::user()->id])->first();
         if (!empty($request)) {
             if ($request->status == 1) {
-                return response()->json(['status' => 203, 'message' => 'You can not cancel this request']);
+                return response(['message' => 'You can not cancel this request'], 400);
             }
         } else {
-            return response()->json(['status' => 203, 'message' => 'Invalid Request']);
+            return response(['message' => 'Invalid Request'], 409);
         }
 
         VehicleRequest::where(['id' => $request_id, 'customer_id' => Auth::user()->id])->update(['status' => 2, 'valet' => NULL]);
-        return response()->json(['status' => 200, 'message' => 'Request Canceled Successfully']);
+        return response(['message' => 'Request Canceled Successfully'], 200);
     }
 
     public function all_cancel_request()
@@ -133,10 +133,14 @@ class CustomerController extends Controller
     }
     public function getRequests(Request $request)
     {
-        $completed = VehicleRequest::where(['customer_id' => Auth::user()->id, 'status' => 1, 'payment_done_by_customer' => 0])->first();
+        $customer_id = auth()->user()->id;
+        $completed = VehicleRequest::where(['customer_id' => $customer_id, 'status' => 1, 'payment_done_by_customer' => 0])->first();
         // $completed = VehicleRequest::where(['customer_id' => Auth::user()->id, 'status' => 1])->first();
-        $active = VehicleRequest::where(['customer_id' => Auth::user()->id, 'status' => 0])->first();
-        return response(['active' => $active, 'completed' => $completed], 200);
+        $active = VehicleRequest::where(['customer_id' => $customer_id, 'status' => 0])->first();
+
+        $locations = User::where(['user_type' => 1])->Where('location', '!=', NULL)->select('location')->get();
+
+        return response(['active' => $active, 'completed' => $completed, 'locations' => $locations], 200);
     }
     public function getRequestsold()
     {
@@ -185,12 +189,19 @@ class CustomerController extends Controller
 
         $vehicle_request = VehicleRequest::find($request->request_id);
         $valet = User::find($vehicle_request->valet);
+
         // **********************************  get Feedback for Request *****************************************
-        $feedback_request = Feedback::where(['valet_id' => $vehicle_request->valet, 'processed' => 0])->first();
-        $feedback_request->message = $request->message;
-        $feedback_request->tip = $request->amount;
-        $feedback_request->rating = $request->rating;
-        $feedback_request->save();
+        // $feedback_request = Feedback::where(['valet_id' => $vehicle_request->valet, 'processed' => 0])->first();
+        // return $feedback_request;
+        Feedback::create([
+            'valet_id' => $valet->id,
+            'customer_id' => auth()->user()->id,
+            'tip' => $request->amount,
+            'message' => $request->message,
+            'request_id' => $vehicle_request->id,
+            'tip_type' => 0,
+            'rating' => $valet->id,
+        ]);
 
         // ******************************************************************************************************
 

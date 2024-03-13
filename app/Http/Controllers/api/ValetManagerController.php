@@ -38,11 +38,9 @@ class ValetManagerController extends Controller
             return response(["message" => $error], 400);
         }
         $check_email = User::where(['email' => $request->email])->first();
-
         if (!empty($check_email)) {
             return response(["message" => 'Email Already Exist'], 409);
         }
-
         $six_digit_random_number = mt_rand(100000, 999999);
         $create_valet = [
             'first_name' => $request->first_name,
@@ -69,14 +67,16 @@ class ValetManagerController extends Controller
     {
         $manager_id = Auth::user()->id;
         $pending_requests = VehicleRequest::where(['status' => 0, 'valet' => null])->where(['valet_manager' => $manager_id])->get();
-        $requests = VehicleRequest::where(['valet_manager' => Auth::user()->id])->where('status', '!=', 2)->with(['customer' => function ($query) {
+        $completed_requests = VehicleRequest::where(['status' => 1])->where(['valet_manager' => $manager_id])->get();
+        $requests = VehicleRequest::where(['valet_manager' => $manager_id])->where('status', '!=', 2)->with(['customer' => function ($query) {
             $query->where(['user_type' => 0]);
         }])->with('valetdetails')->orderBy('id', 'DESC')->get();
-        $valets = User::where(['created_by' => Auth::user()->id, 'is_free' => 1, 'user_type' => 2])->get();
+        $valets = User::where(['created_by' => $manager_id, 'is_free' => 1, 'user_type' => 2])->get();
+        $busy_valets = User::where(['created_by' => $manager_id, 'is_free' => 0, 'user_type' => 2])->get();
         $request_ids = VehicleRequest::where(['valet_manager' => $manager_id, 'status' => 1, 'payment_done_by_customer' => 1])->whereDate('updated_at', today())->pluck('id');
         $today_pooled_tip = Feedback::whereIn('request_id', $request_ids)->where('tip_type', 0)->sum('tip');
 
-        return response(['pending_request' => $pending_requests, 'valets' => $valets, 'pooled_tip' => $today_pooled_tip], 200);
+        return response(['pending_request' => $pending_requests, 'busy_valets' => $busy_valets, 'valets' => $valets, 'settled_requests' => $completed_requests, 'pooled_tip' => $today_pooled_tip], 200);
         // return response(['pending_request' => $pending_requests, 'settled_requests' => $completed_requests, 'valets' => $valets], 200);
         // return response(['message' => 'All Vehicle Request', 'data' => $requests, 'pending_request' => $pending_requests, 'settled_requests' => $completed_requests], 200);
     }
@@ -107,19 +107,23 @@ class ValetManagerController extends Controller
     public function sendOtp($email)
     {
         try {
+            $resetPassword = false;
             $code = mt_rand(1000, 9999);
             User::where(['email' => $email])->update(['otp' => Hash::make($code)]);
-            SendVerificationOtp::dispatch($email, $code);
+            SendVerificationOtp::dispatch($email, $code, $resetPassword);
         } catch (\Throwable $th) {
             // throw $th;
         }
     }
 
 
-    public function locations()
+    public function getALllocations()
     {
         $locations = User::where(['user_type' => 1])->Where('location', '!=', NULL)->select('location')->get();
-        return response(['message' => 'All Locations', 'data' => $locations]);
+        if ($locations) {
+            return response(['data' => $locations], 200);
+        }
+        return response(['message' => 'No location found'], 404);
     }
 
 
@@ -165,7 +169,9 @@ class ValetManagerController extends Controller
 
         VehicleRequest::where(['id' => $request->request_id])->update(['valet' => $request->valet_id]);
         User::where(['id' => $request->valet_id])->update(['is_free' => 0]);
-        return response(["message" => 'Valet Assign Successfully'], 201);
+        $pending_requests = VehicleRequest::where(['status' => 0, 'valet' => null])->where(['valet_manager' => auth()->user()->id])->get();
+
+        return response(["message" => 'Valet Assign Successfully', 'pending_request' => $pending_requests], 201);
     }
 
 

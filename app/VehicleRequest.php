@@ -32,9 +32,10 @@ class VehicleRequest extends Model
 
     public function getClientNameAttribute()
     {
-        // return User::where(['id' => $this->customer_id])->pluck('first_name')->first();
-        $user =  User::Where(['id' => $this->customer_id])->first();
-        return $user->first_name . ' ' . $user->last_name;
+        if ($this->customer_id) {
+            $user =  User::Where(['id' => $this->customer_id])->first();
+            return $user->first_name . ' ' . $user->last_name;
+        }
     }
 
     public function feedback()
@@ -44,10 +45,10 @@ class VehicleRequest extends Model
 
     public function getValetNameAttribute()
     {
-        $user =  User::Where(['id' => $this->valet])->first();
-        return $user->first_name . ' ' . $user->last_name;
-
-        // return User::Where(['id' => $this->valet])->pluck('first_name')->first();
+        if ($this->valet) {
+            $user =  User::Where(['id' => $this->valet])->first();
+            return $user->first_name . ' ' . $user->last_name;
+        }
     }
 
     //  public function getRateStatusAttribute()
